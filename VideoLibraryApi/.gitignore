@@ -1,0 +1,18 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# VS Code
+.vscode/
+
+# Environment
+appsettings.Development.json
+.env
+
+# SQLite — на время разработки
+# *.db
+# *.db-shm
+# *.db-wal

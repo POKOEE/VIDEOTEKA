@@ -3,7 +3,7 @@ using VideoLibraryApi.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Регистрируем контекст БД (SQLite)
+// Регистрируем контекст БД
 builder.Services.AddDbContext<VideoLibraryContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -13,13 +13,10 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Swagger в любом окружении — чтобы работал в Docker
+app.UseSwagger();
+app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
