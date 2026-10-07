@@ -5,6 +5,10 @@ on:
     branches: [ "main", "master" ]
   pull_request:
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,7 +24,7 @@ jobs:
       - name: Set up .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '10.0.x'
 
       - name: Restore dependencies
         run: dotnet restore VideoLibraryApi/VideoLibraryApi.csproj
@@ -31,9 +35,14 @@ jobs:
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Приводим имя образа к нижнему регистру
+      - name: Lowercase repository name
+        id: repo
+        run: echo "name=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -42,5 +51,5 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}/videoteka:latest
-            ghcr.io/${{ github.repository }}/videoteka:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/videoteka:latest
+            ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/videoteka:${{ github.sha }}
