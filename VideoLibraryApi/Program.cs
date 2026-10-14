@@ -18,6 +18,16 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
+app.UseReDoc(c =>
+{
+    c.RoutePrefix = "redoc";
+    c.SpecUrl = "/swagger/v1/swagger.json";
+    c.DocumentTitle = "VideoLibraryApi";
+});
+
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseAuthorization();
 app.MapControllers();
 

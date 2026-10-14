@@ -1079,6 +1079,22 @@
           "buildMultiTargeting/Swashbuckle.AspNetCore.props": {}
         }
       },
+      "Swashbuckle.AspNetCore.ReDoc/10.3.0": {
+        "type": "package",
+        "compile": {
+          "lib/net10.0/Swashbuckle.AspNetCore.ReDoc.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net10.0/Swashbuckle.AspNetCore.ReDoc.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "frameworkReferences": [
+          "Microsoft.AspNetCore.App"
+        ]
+      },
       "Swashbuckle.AspNetCore.Swagger/10.2.3": {
         "type": "package",
         "dependencies": {
@@ -3482,6 +3498,27 @@
         "swashbuckle.aspnetcore.nuspec"
       ]
     },
+    "Swashbuckle.AspNetCore.ReDoc/10.3.0": {
+      "sha512": "GhlvoY+s04g0poIOc2QhEVWwpBhILeoGqafNMpnzeaiSQW7/X5LUgXHZle5oxs2TTtYzfmeuRDwZgV1/Qwdkrw==",
+      "type": "package",
+      "path": "swashbuckle.aspnetcore.redoc/10.3.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net10.0/Swashbuckle.AspNetCore.ReDoc.dll",
+        "lib/net10.0/Swashbuckle.AspNetCore.ReDoc.pdb",
+        "lib/net10.0/Swashbuckle.AspNetCore.ReDoc.xml",
+        "lib/net8.0/Swashbuckle.AspNetCore.ReDoc.dll",
+        "lib/net8.0/Swashbuckle.AspNetCore.ReDoc.pdb",
+        "lib/net8.0/Swashbuckle.AspNetCore.ReDoc.xml",
+        "lib/net9.0/Swashbuckle.AspNetCore.ReDoc.dll",
+        "lib/net9.0/Swashbuckle.AspNetCore.ReDoc.pdb",
+        "lib/net9.0/Swashbuckle.AspNetCore.ReDoc.xml",
+        "package-readme.md",
+        "swashbuckle.aspnetcore.redoc.10.3.0.nupkg.sha512",
+        "swashbuckle.aspnetcore.redoc.nuspec"
+      ]
+    },
     "Swashbuckle.AspNetCore.Swagger/10.2.3": {
       "sha512": "1jUUs3WQnrS0FUtaZPLSy1yYMEwS1zlvDmvQ2/eldPHUANX0LJSLVZecCMgSMdeGiRqeaRrIXLtSz++TCiTMww==",
       "type": "package",
@@ -3907,7 +3944,8 @@
       "Microsoft.EntityFrameworkCore.Design >= 10.0.12",
       "Microsoft.EntityFrameworkCore.SqlServer >= 10.0.12",
       "Microsoft.EntityFrameworkCore.Sqlite >= 10.0.12",
-      "Swashbuckle.AspNetCore >= 10.2.3"
+      "Swashbuckle.AspNetCore >= 10.2.3",
+      "Swashbuckle.AspNetCore.ReDoc >= 10.3.0"
     ]
   },
   "packageFolders": {
@@ -3984,6 +4022,10 @@
           "Swashbuckle.AspNetCore": {
             "target": "Package",
             "version": "[10.2.3, )"
+          },
+          "Swashbuckle.AspNetCore.ReDoc": {
+            "target": "Package",
+            "version": "[10.3.0, )"
           }
         },
         "imports": [

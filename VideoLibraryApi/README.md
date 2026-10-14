@@ -1,14 +1,22 @@
-# VideoLibraryApi
+Веб-приложение «Видеотека» на ASP.NET Core с поддержкой:
+- Фильмов (с постерами)
+- Жанров
+- Клиентов
+- Аренды (выдача/возврат)
+- Топ популярных фильмов
+- Просроченных аренд
 
-C# Web API для библиотеки видео (.NET 10, EF Core, SQLite).
+## Технологии
 
-## Стек
 - .NET 10
-- ASP.NET Core
+- ASP.NET Core Web API
 - Entity Framework Core
 - SQLite
+- Docker
+- GitHub Actions
 
-## Запуск локально
+## Запуск
+
 ```bash
-dotnet restore
+cd VideoLibraryApi
 dotnet run
