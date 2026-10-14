@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Моя Видеотека</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        min-height: 100vh; padding: 25px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 { color: white; text-align: center; margin-bottom: 20px;
+         text-shadow: 0 2px 6px rgba(0,0,0,0.3); font-size: 30px; }
+
+    /* СТАТИСТИКА */
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 12px; margin-bottom: 20px;
+    }
+    .stat {
+        background: rgba(255,255,255,0.95); border-radius: 10px;
+        padding: 14px; text-align: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .stat-value { font-size: 22px; font-weight: 700; color: #667eea; }
+    .stat-label { font-size: 11px; color: #718096; margin-top: 4px; }
+
+    /* ВКЛАДКИ */
+    .tabs { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
+    .tab {
+        padding: 10px 20px; background: rgba(255,255,255,0.25);
+        color: white; border: none; border-radius: 8px;
+        cursor: pointer; font-weight: 600; font-size: 13px;
+        transition: background 0.2s;
+    }
+    .tab:hover { background: rgba(255,255,255,0.4); }
+    .tab.active { background: white; color: #667eea; }
+
+    /* КАРТОЧКИ */
+    .card {
+        background: white; border-radius: 12px; padding: 22px;
+        margin-bottom: 18px; box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .card h2 {
+        color: #333; margin-bottom: 15px; border-bottom: 2px solid #667eea;
+        padding-bottom: 8px; font-size: 18px;
+    }
+    .hidden { display: none; }
+
+    /* ФОРМЫ */
+    input, select, textarea {
+        padding: 9px 13px; border: 2px solid #ddd; border-radius: 8px;
+        font-size: 14px; width: 100%; margin-bottom: 8px;
+        font-family: inherit;
+    }
+    input:focus, select:focus, textarea:focus {
+        outline: none; border-color: #667eea;
+    }
+    textarea { resize: vertical; min-height: 60px; }
+
+    .row { display: grid; gap: 8px; margin-bottom: 8px; }
+    .row-2 { grid-template-columns: 1fr 1fr; }
+    .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+    /* КНОПКИ */
+    .btn {
+        background: #667eea; color: white; border: none;
+        padding: 10px 20px; border-radius: 8px;
+        font-weight: 600; cursor: pointer; font-size: 13px;
+        transition: background 0.2s;
+    }
+    .btn:hover { background: #5568d3; }
+    .btn-refresh { background: #48bb78; }
+    .btn-refresh:hover { background: #38a169; }
+    .btn-delete { background: #e53e3e; padding: 6px 12px; font-size: 12px; }
+    .btn-delete:hover { background: #c53030; }
+    .btn-edit { background: #ed8936; padding: 6px 12px; font-size: 12px; }
+    .btn-edit:hover { background: #dd6b20; }
+    .btn-small { padding: 6px 12px; font-size: 12px; }
+
+    /* СПИСКИ */
+    .item {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 12px 0; border-bottom: 1px solid #eee;
+    }
+    .item:last-child { border-bottom: none; }
+    .item-title { font-weight: 700; color: #2d3748; margin-bottom: 3px; }
+    .item-meta { color: #718096; font-size: 12px; }
+
+    .badge {
+        background: #667eea; color: white; padding: 2px 8px;
+        border-radius: 10px; font-size: 11px; margin-right: 6px;
+    }
+    .badge-ok { background: #48bb78; }
+    .badge-no { background: #e53e3e; }
+    .badge-warn { background: #ed8936; }
+
+    .empty { color: #999; text-align: center; padding: 20px; font-style: italic; }
+
+    /* ФИЛЬМЫ С ПОСТЕРАМИ */
+    .movie-row {
+        display: flex; gap: 15px; align-items: flex-start;
+        padding: 15px 0; border-bottom: 1px solid #eee;
+    }
+    .movie-row:last-child { border-bottom: none; }
+
+    .movie-poster {
+        width: 80px; height: 110px; object-fit: cover;
+        border-radius: 8px; background: #f0f0f0;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .movie-poster.no-image {
+        display: flex; align-items: center; justify-content: center;
+        color: #bbb; font-size: 32px;
+    }
+    .movie-info { flex: 1; }
+    .movie-description {
+        color: #666; font-size: 12px; margin-top: 6px;
+        line-height: 1.4;
+    }
+    .actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    /* УВЕДОМЛЕНИЯ */
+    .status {
+        position: fixed; top: 20px; right: 20px; padding: 12px 22px;
+        border-radius: 8px; color: white; font-weight: 600;
+        opacity: 0; transition: opacity 0.3s; z-index: 1000;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    }
+    .status.show { opacity: 1; }
+    .status.success { background: #48bb78; }
+    .status.error { background: #e53e3e; }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>🎬 Моя Видеотека</h1>
+
+    <!-- СТАТИСТИКА -->
+    <div class="stats">
+        <div class="stat"><div class="stat-value" id="s-movies">—</div><div class="stat-label">Фильмов</div></div>
+        <div class="stat"><div class="stat-value" id="s-genres">—</div><div class="stat-label">Жанров</div></div>
+        <div class="stat"><div class="stat-value" id="s-customers">—</div><div class="stat-label">Клиентов</div></div>
+        <div class="stat"><div class="stat-value" id="s-active">—</div><div class="stat-label">В аренде</div></div>
+        <div class="stat"><div class="stat-value" id="s-total">—</div><div class="stat-label">Всего аренд</div></div>
+    </div>
+
+    <!-- ВКЛАДКИ -->
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('movies', this)">🎞️ Фильмы</button>
+        <button class="tab" onclick="showTab('genres', this)">🏷️ Жанры</button>
+        <button class="tab" onclick="showTab('customers', this)">👥 Клиенты</button>
+        <button class="tab" onclick="showTab('rentals', this)">📅 Аренда</button>
+        <button class="tab" onclick="showTab('top', this)">⭐ Топ</button>
+        <button class="tab" onclick="showTab('overdue', this)">⏰ Просрочки</button>
+    </div>
+
+    <!-- ===== ФИЛЬМЫ ===== -->
+    <div id="tab-movies" class="tab-content">
+        <div class="card">
+            <h2>➕ Добавить фильм</h2>
+            <input id="m-title" placeholder="Название фильма">
+            <div class="row row-3">
+                <input id="m-year" type="number" placeholder="Год">
+                <input id="m-duration" type="number" placeholder="Длительность, мин">
+                <input id="m-price" type="number" step="0.01" placeholder="Цена аренды, ₽">
+            </div>
+            <input id="m-poster" placeholder="🔗 URL постера (например: https://...jpg)">
+            <textarea id="m-description" placeholder="Краткое описание фильма"></textarea>
+            <select id="m-genre"><option value="">Жанр</option></select>
+            <button class="btn" onclick="addMovie()">Добавить фильм</button>
+        </div>
+
+        <div class="card">
+            <h2>🎞️ Каталог фильмов</h2>
+            <div class="row row-4">
+                <input id="f-search" placeholder="🔍 Поиск по названию..." oninput="loadMovies()">
+                <select id="f-genre" onchange="loadMovies()"><option value="">Все жанры</option></select>
+                <input id="f-price-min" type="number" placeholder="Цена от" oninput="loadMovies()">
+                <input id="f-price-max" type="number" placeholder="Цена до" oninput="loadMovies()">
+            </div>
+            <div class="row row-3">
+                <select id="f-sort" onchange="loadMovies()">
+                    <option value="title">Сортировка: по названию</option>
+                    <option value="year">По году (новые)</option>
+                    <option value="price">По цене ↑</option>
+                    <option value="price_desc">По цене ↓</option>
+                </select>
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;">
+                    <input type="checkbox" id="f-available" onchange="loadMovies()"
+                           style="width:auto; margin: 0;"> Только доступные
+                </label>
+                <button class="btn btn-refresh" onclick="loadMovies()">🔄 Обновить</button>
+            </div>
+            <div id="movies-list"><div class="empty">Загрузка...</div></div>
+        </div>
+    </div>
+
+    <!-- ===== ЖАНРЫ ===== -->
+    <div id="tab-genres" class="tab-content hidden">
+        <div class="card">
+            <h2>➕ Добавить жанр</h2>
+            <input id="g-name" placeholder="Название жанра">
+            <button class="btn" onclick="addGenre()">Добавить</button>
+        </div>
+        <div class="card">
+            <h2>🏷️ Список жанров</h2>
+            <button class="btn btn-refresh" onclick="loadGenres()">🔄 Обновить</button>
+            <div id="genres-list"></div>
+        </div>
+    </div>
+
+    <!-- ===== КЛИЕНТЫ ===== -->
+    <div id="tab-customers" class="tab-content hidden">
+        <div class="card">
+            <h2>➕ Добавить клиента</h2>
+            <div class="row row-2">
+                <input id="c-firstname" placeholder="Имя">
+                <input id="c-lastname" placeholder="Фамилия">
+            </div>
+            <div class="row row-2">
+                <input id="c-email" type="email" placeholder="Email">
+                <input id="c-phone" placeholder="Телефон">
+            </div>
+            <button class="btn" onclick="addCustomer()">Добавить</button>
+        </div>
+        <div class="card">
+            <h2>👥 Список клиентов</h2>
+            <input id="cust-search" placeholder="🔍 Поиск по имени или email..." oninput="loadCustomers()">
+            <button class="btn btn-refresh" onclick="loadCustomers()">🔄 Обновить</button>
+            <div id="customers-list"></div>
+        </div>
+    </div>
+
+    <!-- ===== АРЕНДА ===== -->
+    <div id="tab-rentals" class="tab-content hidden">
+        <div class="card">
+            <h2>➕ Оформить аренду</h2>
+            <select id="r-movie"><option value="">Выберите фильм</option></select>
+            <select id="r-customer"><option value="">Выберите клиента</option></select>
+            <button class="btn" onclick="rentMovie()">Оформить аренду</button>
+        </div>
+        <div class="card">
+            <h2>📅 История аренд</h2>
+            <label style="font-size:13px;display:block;margin-bottom:8px;">
+                <input type="checkbox" id="r-active-only" onchange="loadRentals()"
+                       style="width:auto; margin: 0;"> Только активные
+            </label>
+            <button class="btn btn-refresh" onclick="loadRentals()">🔄 Обновить</button>
+            <div id="rentals-list"></div>
+        </div>
+    </div>
+
+    <!-- ===== ТОП ===== -->
+    <div id="tab-top" class="tab-content hidden">
+        <div class="card">
+            <h2>⭐ Самые популярные фильмы</h2>
+            <button class="btn btn-refresh" onclick="loadTop()">🔄 Обновить</button>
+            <div id="top-list"></div>
+        </div>
+    </div>
+
+    <!-- ===== ПРОСРОЧКИ ===== -->
+    <div id="tab-overdue" class="tab-content hidden">
+        <div class="card">
+            <h2>⏰ Просроченные аренды (больше 7 дней)</h2>
+            <button class="btn btn-refresh" onclick="loadOverdue()">🔄 Обновить</button>
+            <div id="overdue-list"></div>
+        </div>
+    </div>
+</div>
+
+<div class="status" id="status"></div>
+
+<script>
+const API = "/api";
+
+// ============ ВКЛАДКИ ============
+function showTab(name, btn) {
+    document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+    document.querySelectorAll(".tab").forEach(el => el.classList.remove("active"));
+    document.getElementById("tab-" + name).classList.remove("hidden");
+    btn.classList.add("active");
+
+    if (name === "top") loadTop();
+    if (name === "overdue") loadOverdue();
+    if (name === "rentals") loadRentals();
+    if (name === "customers") loadCustomers();
+    if (name === "genres") loadGenres();
+    if (name === "movies") loadMovies();
+}
+
+// ============ УВЕДОМЛЕНИЯ ============
+function showStatus(msg, isError) {
+    const el = document.getElementById("status");
+    el.textContent = msg;
+    el.className = "status show " + (isError ? "error" : "success");
+    setTimeout(() => el.classList.remove("show"), 2500);
+}
+
+// ============ API ============
+async function api(url, options) {
+    const res = await fetch(API + url, options);
+    if (!res.ok) throw new Error(await res.text());
+    return res.status === 204 ? null : res.json();
+}
+
+// ============ СТАТИСТИКА ============
+async function loadStats() {
+    try {
+        const s = await api("/stats");
+        document.getElementById("s-movies").textContent = s.movies ?? '—';
+        document.getElementById("s-genres").textContent = s.genres ?? '—';
+        document.getElementById("s-customers").textContent = s.customers ?? '—';
+        document.getElementById("s-active").textContent = s.rentalsActive ?? '—';
+        document.getElementById("s-total").textContent = s.rentalsTotal ?? '—';
+    } catch (e) { console.warn("Stats:", e); }
+}
+
+// ============ ФИЛЬМЫ ============
+async function loadMovies() {
+    const params = new URLSearchParams();
+    const search = document.getElementById("f-search")?.value;
+    const genreId = document.getElementById("f-genre")?.value;
+    const pMin = document.getElementById("f-price-min")?.value;
+    const pMax = document.getElementById("f-price-max")?.value;
+    const sort = document.getElementById("f-sort")?.value;
+    const avail = document.getElementById("f-available")?.checked;
+
+    if (search) params.append("search", search);
+    if (genreId) params.append("genreId", genreId);
+    if (pMin) params.append("priceMin", pMin);
+    if (pMax) params.append("priceMax", pMax);
+    if (sort) params.append("sortBy", sort);
+    if (avail) params.append("availableOnly", "true");
+
+    try {
+        const movies = await api("/movies?" + params);
+        document.getElementById("movies-list").innerHTML = movies.length === 0
+            ? '<div class="empty">Нет фильмов</div>'
+            : movies.map(m => {
+                const poster = m.posterUrl
+                    ? `<img src="${m.posterUrl}" alt="${m.title}" class="movie-poster"
+                            onerror="this.outerHTML='<div class=\\'movie-poster no-image\\'>🎬</div>'">`
+                    : `<div class="movie-poster no-image">🎬</div>`;
+
+                return `
+                    <div class="movie-row">
+                        ${poster}
+                        <div class="movie-info">
+                            <div class="item-title">
+                                ${m.title}
+                                <span class="badge">${m.year}</span>
+                                <span class="badge ${m.isAvailable ? 'badge-ok' : 'badge-no'}">
+                                    ${m.isAvailable ? 'доступен' : 'выдан'}
+                                </span>
+                            </div>
+                            <div class="item-meta">
+                                ${m.genreName || '—'} • ${m.durationMinutes} мин • ${m.price} ₽
+                            </div>
+                            ${m.description ? `<div class="movie-description">${m.description}</div>` : ''}
+                        </div>
+                        <div class="actions">
+                            <button class="btn btn-edit" onclick='editMovie(${JSON.stringify(m).replace(/'/g, "&#39;")})'>Изменить</button>
+                            <button class="btn btn-delete" onclick="deleteMovie(${m.movieId})">Удалить</button>
+                        </div>
+                    </div>`;
+            }).join("");
+    } catch (e) {
+        document.getElementById("movies-list").innerHTML = '<div class="empty">Ошибка загрузки</div>';
+        console.error("Movies:", e);
+    }
+}
+
+async function addMovie() {
+    const movie = {
+        title: document.getElementById("m-title").value.trim(),
+        year: parseInt(document.getElementById("m-year").value),
+        durationMinutes: parseInt(document.getElementById("m-duration").value) || 90,
+        price: parseFloat(document.getElementById("m-price").value) || 100,
+        posterUrl: document.getElementById("m-poster").value.trim() || null,
+        description: document.getElementById("m-description").value.trim() || null,
+        genreId: parseInt(document.getElementById("m-genre").value) || 1
+    };
+    if (!movie.title || !movie.year) return showStatus("Заполните название и год", true);
+
+    await api("/movies", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(movie)
+    });
+
+    ["m-title", "m-year", "m-duration", "m-price", "m-poster", "m-description"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = "";
+    });
+
+    showStatus("Фильм добавлен");
+    loadMovies();
+    loadStats();
+}
+
+async function editMovie(movie) {
+    const newTitle = prompt("Название:", movie.title);
+    if (newTitle === null) return;
+    const newYear = prompt("Год:", movie.year);
+    if (newYear === null) return;
+    const newPrice = prompt("Цена:", movie.price);
+    if (newPrice === null) return;
+    const newDuration = prompt("Длительность, мин:", movie.durationMinutes);
+    if (newDuration === null) return;
+    const newPoster = prompt("URL постера:", movie.posterUrl || "");
+    if (newPoster === null) return;
+    const newDescription = prompt("Описание:", movie.description || "");
+    if (newDescription === null) return;
+
+    await api("/movies/" + movie.movieId, {
+        method: "PUT",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            movieId: movie.movieId,
+            title: newTitle,
+            year: parseInt(newYear),
+            price: parseFloat(newPrice),
+            durationMinutes: parseInt(newDuration),
+            posterUrl: newPoster.trim() || null,
+            description: newDescription.trim() || null,
+            genreId: movie.genreId
+        })
+    });
+    showStatus("Фильм обновлён");
+    loadMovies();
+}
+
+async function deleteMovie(id) {
+    if (!confirm("Удалить фильм?")) return;
+    await api("/movies/" + id, { method: "DELETE" });
+    showStatus("Фильм удалён");
+    loadMovies();
+    loadStats();
+}
+
+// ============ ЖАНРЫ ============
+async function loadGenres() {
+    try {
+        const genres = await api("/genres");
+        document.getElementById("genres-list").innerHTML = genres.length === 0
+            ? '<div class="empty">Нет жанров</div>'
+            : genres.map(g => `
+                <div class="item">
+                    <div class="item-title">${g.name}</div>
+                    <button class="btn btn-delete" onclick="deleteGenre(${g.genreId})">Удалить</button>
+                </div>`).join("");
+
+        const sel1 = document.getElementById("m-genre");
+        const sel2 = document.getElementById("f-genre");
+        sel1.innerHTML = '<option value="">Жанр</option>';
+        sel2.innerHTML = '<option value="">Все жанры</option>';
+        genres.forEach(g => {
+            sel1.innerHTML += `<option value="${g.genreId}">${g.name}</option>`;
+            sel2.innerHTML += `<option value="${g.genreId}">${g.name}</option>`;
+        });
+    } catch (e) { console.warn("Genres:", e); }
+}
+
+async function addGenre() {
+    const name = document.getElementById("g-name").value.trim();
+    if (!name) return showStatus("Введите название", true);
+    await api("/genres", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ name })
+    });
+    document.getElementById("g-name").value = "";
+    showStatus("Жанр добавлен");
+    loadGenres();
+    loadStats();
+}
+
+async function deleteGenre(id) {
+    if (!confirm("Удалить жанр?")) return;
+    await api("/genres/" + id, { method: "DELETE" });
+    showStatus("Жанр удалён");
+    loadGenres();
+    loadStats();
+}
+
+// ============ КЛИЕНТЫ ============
+async function loadCustomers() {
+    const search = document.getElementById("cust-search")?.value || "";
+    try {
+        const customers = await api("/customers?search=" + encodeURIComponent(search));
+        document.getElementById("customers-list").innerHTML = customers.length === 0
+            ? '<div class="empty">Нет клиентов</div>'
+            : customers.map(c => `
+                <div class="item">
+                    <div>
+                        <div class="item-title">${c.fullName}</div>
+                        <div class="item-meta">${c.email || '—'} • ${c.phone || '—'}</div>
+                    </div>
+                    <div class="actions">
+                        <button class="btn btn-edit" onclick="viewHistory(${c.customerId}, '${c.fullName.replace(/'/g, "\\'")}')">История</button>
+                        <button class="btn btn-delete" onclick="deleteCustomer(${c.customerId})">Удалить</button>
+                    </div>
+                </div>`).join("");
+
+        const sel = document.getElementById("r-customer");
+        sel.innerHTML = '<option value="">Выберите клиента</option>';
+        customers.forEach(c => sel.innerHTML += `<option value="${c.customerId}">${c.fullName}</option>`);
+    } catch (e) { console.warn("Customers:", e); }
+}
+
+async function addCustomer() {
+    const customer = {
+        firstName: document.getElementById("c-firstname").value.trim(),
+        lastName: document.getElementById("c-lastname").value.trim(),
+        email: document.getElementById("c-email").value.trim() || null,
+        phone: document.getElementById("c-phone").value.trim() || null
+    };
+    if (!customer.firstName || !customer.lastName)
+        return showStatus("Введите имя и фамилию", true);
+
+    await api("/customers", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(customer)
+    });
+
+    ["c-firstname", "c-lastname", "c-email", "c-phone"].forEach(id => {
+        document.getElementById(id).value = "";
+    });
+
+    showStatus("Клиент добавлен");
+    loadCustomers();
+    loadStats();
+}
+
+async function deleteCustomer(id) {
+    if (!confirm("Удалить клиента?")) return;
+    await api("/customers/" + id, { method: "DELETE" });
+    showStatus("Клиент удалён");
+    loadCustomers();
+    loadStats();
+}
+
+async function viewHistory(id, name) {
+    try {
+        const history = await api(`/customers/${id}/history`);
+        if (history.length === 0) {
+            alert(`У клиента "${name}" пока нет аренды`);
+            return;
+        }
+        const text = history.map(h =>
+            `${h.movieTitle} — ${new Date(h.rentedAt).toLocaleDateString()} ${h.isActive ? '(в аренде)' : '(возвращено)'}`
+        ).join("\n");
+        alert(`История аренды "${name}":\n\n${text}`);
+    } catch (e) {
+        showStatus("Ошибка загрузки истории", true);
+    }
+}
+
+// ============ АРЕНДА ============
+async function loadRentals() {
+    const activeOnly = document.getElementById("r-active-only")?.checked;
+    try {
+        const rentals = await api("/rentals" + (activeOnly ? "?activeOnly=true" : ""));
+        document.getElementById("rentals-list").innerHTML = rentals.length === 0
+            ? '<div class="empty">Нет аренды</div>'
+            : rentals.map(r => `
+                <div class="item">
+                    <div>
+                        <div class="item-title">${r.movieTitle} → ${r.customerName}</div>
+                        <div class="item-meta">
+                            ${new Date(r.rentedAt).toLocaleDateString()}
+                            ${r.isActive
+                                ? '<span class="badge badge-no">в аренде</span>'
+                                : '<span class="badge badge-ok">возвращено</span>'}
+                        </div>
+                    </div>
+                    ${r.isActive ? `<button class="btn btn-small" onclick="returnMovie(${r.rentalId})">Вернуть</button>` : ''}
+                </div>`).join("");
+
+        const movies = await api("/movies");
+        const sel = document.getElementById("r-movie");
+        sel.innerHTML = '<option value="">Выберите фильм</option>';
+        movies.forEach(m => sel.innerHTML += `<option value="${m.movieId}">${m.title}</option>`);
+    } catch (e) { console.warn("Rentals:", e); }
+}
+
+async function rentMovie() {
+    const movieId = parseInt(document.getElementById("r-movie").value);
+    const customerId = parseInt(document.getElementById("r-customer").value);
+    if (!movieId || !customerId) return showStatus("Выберите фильм и клиента", true);
+
+    await api("/rentals", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ movieId, customerId })
+    });
+
+    showStatus("Аренда оформлена");
+    loadRentals();
+    loadStats();
+}
+
+async function returnMovie(id) {
+    await api(`/rentals/${id}/return`, { method: "POST" });
+    showStatus("Фильм возвращён");
+    loadRentals();
+    loadStats();
+}
+
+// ============ ТОП ============
+async function loadTop() {
+    try {
+        const top = await api("/movies/top?count=5");
+        if (top.length === 0) {
+            document.getElementById("top-list").innerHTML = '<div class="empty">Нет данных</div>';
+            return;
+        }
+        const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+        document.getElementById("top-list").innerHTML = top.map((m, i) => {
+            const poster = m.posterUrl
+                ? `<img src="${m.posterUrl}" class="movie-poster" alt="${m.title}"
+                        onerror="this.outerHTML='<div class=\\'movie-poster no-image\\'>🎬</div>'">`
+                : `<div class="movie-poster no-image">🎬</div>`;
+            return `
+                <div class="movie-row">
+                    ${poster}
+                    <div class="movie-info">
+                        <div class="item-title">${medals[i] || ''} ${m.title}</div>
+                        <div class="item-meta">
+                            ${m.genreName || '—'} • ${m.year} • ${m.rentalsCount} аренд • ${m.price} ₽
+                        </div>
+                    </div>
+                </div>`;
+        }).join("");
+    } catch (e) { console.warn("Top:", e); }
+}
+
+// ============ ПРОСРОЧКИ ============
+async function loadOverdue() {
+    try {
+        const overdue = await api("/rentals/overdue");
+        document.getElementById("overdue-list").innerHTML = overdue.length === 0
+            ? '<div class="empty">Просроченных аренд нет ✅</div>'
+            : overdue.map(r => `
+                <div class="item">
+                    <div>
+                        <div class="item-title">${r.movieTitle} → ${r.customerName}</div>
+                        <div class="item-meta">
+                            Взято: ${new Date(r.rentedAt).toLocaleDateString()} •
+                            <span class="badge badge-warn">просрочка ${r.daysOverdue} дн.</span>
+                        </div>
+                    </div>
+                </div>`).join("");
+    } catch (e) { console.warn("Overdue:", e); }
+}
+
+// ============ ИНИЦИАЛИЗАЦИЯ ============
+loadStats();
+loadMovies();
+loadGenres();
+</script>
+</body>
+</html>

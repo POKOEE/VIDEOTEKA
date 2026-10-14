@@ -63,11 +63,17 @@ namespace VideoLibraryApi.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("DurationMinutes")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("GenreId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("PosterUrl")
+                        .HasColumnType("TEXT");
 
                     b.Property<decimal>("Price")
                         .HasPrecision(10, 2)

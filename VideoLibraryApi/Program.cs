@@ -1,3 +1,4 @@
+// PR test
 using Microsoft.EntityFrameworkCore;
 using VideoLibraryApi.Data;
 
@@ -16,6 +17,16 @@ var app = builder.Build();
 // Swagger в любом окружении — чтобы работал в Docker
 app.UseSwagger();
 app.UseSwaggerUI();
+
+app.UseReDoc(c =>
+{
+    c.RoutePrefix = "redoc";
+    c.SpecUrl = "/swagger/v1/swagger.json";
+    c.DocumentTitle = "VideoLibraryApi";
+});
+
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 app.UseAuthorization();
 app.MapControllers();
