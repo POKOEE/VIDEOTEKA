@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CineHub — Управление видеотекой</title>
+<meta name="description" content="CineHub — веб-приложение для управления каталогом фильмов, клиентами и арендой видеотеки. Удобный интерфейс администратора.">
+<meta property="og:title" content="CineHub — Управление видеотекой">
+<meta property="og:type" content="website">
+<meta property="og:description" content="Веб-приложение для управления каталогом фильмов.">
+<meta property="og:site_name" content="CineHub">
+
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+        background: #0f172a;
+        background-image:
+            radial-gradient(circle at 80% 10%, rgba(99, 102, 241, 0.2), transparent 40%),
+            radial-gradient(circle at 20% 90%, rgba(236, 72, 153, 0.15), transparent 40%);
+        min-height: 100vh;
+        color: #e2e8f0;
+        overflow-x: hidden;
+    }
+
+    .layout {
+        display: grid;
+        grid-template-columns: 260px 1fr;
+        min-height: 100vh;
+    }
+
+    .sidebar {
+        background: rgba(15, 23, 42, 0.95);
+        border-right: 1px solid rgba(148, 163, 184, 0.1);
+        padding: 24px 16px;
+        backdrop-filter: blur(12px);
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+    }
+
+    .logo {
+        padding: 16px 16px 28px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        margin-bottom: 8px;
+    }
+
+    .logo-text {
+        font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+        font-size: 38px;
+        font-weight: 900;
+        letter-spacing: -1.5px;
+        line-height: 1;
+        background: linear-gradient(90deg, #ef4444, #f97316, #fbbf24, #84cc16, #10b981, #06b6d4, #3b82f6, #8b5cf6, #a855f7, #ec4899, #ef4444);
+        background-size: 400% 100%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: rainbowShift 6s linear infinite;
+        cursor: default;
+        transition: transform 0.3s;
+        user-select: none;
+    }
+    .logo-text:hover { transform: scale(1.05); }
+    @keyframes rainbowShift { 0% { background-position: 0% 50%; } 100% { background-position: 400% 50%; } }
+
+    .nav { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    .nav-title { font-size: 11px; color: #475569; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; padding: 12px 16px 6px; }
+
+    .nav-item {
+        display: flex; align-items: center; gap: 12px; padding: 13px 16px;
+        background: transparent; color: #94a3b8; border: none; border-radius: 12px;
+        cursor: pointer; font-weight: 600; font-size: 14px; text-align: left;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); position: relative;
+    }
+    .nav-item::before {
+        content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+        width: 3px; height: 0; background: linear-gradient(180deg, #6366f1, #a855f7);
+        border-radius: 0 3px 3px 0; transition: height 0.25s;
+    }
+    .nav-item:hover { background: rgba(51, 65, 85, 0.6); color: #e2e8f0; transform: translateX(4px); }
+    .nav-item:hover::before { height: 60%; }
+    .nav-item.active {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+        color: white; border: 1px solid rgba(139, 92, 246, 0.4); box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+    }
+    .nav-item.active::before { height: 70%; }
+    .nav-icon { font-size: 20px; width: 24px; text-align: center; flex-shrink: 0; }
+    .nav-text { font-size: 14px; white-space: nowrap; }
+
+    .cart-widget {
+        background: linear-gradient(135deg, rgba(249, 115, 22, 0.15), rgba(234, 88, 12, 0.15));
+        border: 1px solid rgba(249, 115, 22, 0.4); border-radius: 14px; padding: 16px;
+        cursor: pointer; transition: all 0.25s;
+    }
+    .cart-widget:hover { background: linear-gradient(135deg, rgba(249, 115, 22, 0.25), rgba(234, 88, 12, 0.25)); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(249, 115, 22, 0.3); }
+    .cart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .cart-title { font-size: 13px; color: #fdba74; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+    .cart-badge { background: #ef4444; color: white; font-size: 12px; padding: 3px 10px; border-radius: 50px; font-weight: 800; min-width: 24px; text-align: center; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5); }
+    .cart-count { font-size: 24px; font-weight: 800; color: #fb923c; }
+
+    .content { padding: 30px 35px; overflow-y: auto; }
+
+    .header-wrapper {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 25px;
+    }
+
+    .page-header { margin-bottom: 0; }
+    .page-header h1 { font-size: 32px; font-weight: 800; color: #f1f5f9; margin-bottom: 6px; }
+    .page-header p { color: #64748b; font-size: 14px; }
+
+    .user-profile {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        background: rgba(30, 41, 59, 0.7);
+        padding: 10px 20px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.15);
+    }
+    .user-info { text-align: right; }
+    .user-info strong { display: block; font-size: 14px; color: #e2e8f0; }
+    .user-info span { font-size: 12px; color: #94a3b8; }
+    .btn-logout {
+        background: transparent; border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444;
+        padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 13px;
+        cursor: pointer; transition: all 0.2s;
+    }
+    .btn-logout:hover { background: rgba(239, 68, 68, 0.1); border-color: #ef4444; }
+
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .stat { position: relative; background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9)); border: 1px solid rgba(148, 163, 184, 0.15); border-radius: 16px; padding: 20px 20px 20px 24px; text-align: left; backdrop-filter: blur(12px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; gap: 6px; }
+    .stat::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 16px 0 0 16px; }
+    .stat:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3); border-color: rgba(167, 139, 250, 0.4); }
+    .stat-icon { font-size: 24px; margin-bottom: 4px; }
+    .stat-value { font-size: 32px; font-weight: 800; color: #ffffff; line-height: 1; }
+    .stat-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; }
+    .stat-movies::before    { background: linear-gradient(180deg, #818cf8, #6366f1); }
+    .stat-genres::before    { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
+    .stat-customers::before { background: linear-gradient(180deg, #34d399, #10b981); }
+    .stat-active::before    { background: linear-gradient(180deg, #f87171, #ef4444); }
+    .stat-balance::before   { background: linear-gradient(180deg, #22d3ee, #06b6d4); }
+
+    .card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(148, 163, 184, 0.15); border-radius: 18px; padding: 24px; margin-bottom: 20px; backdrop-filter: blur(10px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); }
+    .card h2 { color: #e2e8f0; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid rgba(148, 163, 184, 0.15); font-size: 18px; font-weight: 700; }
+    .hidden { display: none !important; }
+
+    input, select, textarea { padding: 11px 15px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 10px; font-size: 14px; width: 100%; margin-bottom: 10px; font-family: inherit; color: #e2e8f0; transition: border-color 0.2s; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+    input::placeholder, textarea::placeholder { color: #64748b; }
+    textarea { resize: vertical; min-height: 70px; }
+    .row { display: grid; gap: 10px; margin-bottom: 10px; }
+    .row-2 { grid-template-columns: 1fr 1fr; }
+    .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+    .btn { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; padding: 11px 22px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 14px; transition: transform 0.15s, box-shadow 0.2s; box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3); }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(99, 102, 241, 0.5); }
+    .btn-refresh { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3); }
+    .btn-refresh:hover { box-shadow: 0 10px 24px rgba(16, 185, 129, 0.5); }
+    .btn-delete { background: linear-gradient(135deg, #ef4444, #dc2626); padding: 7px 14px; font-size: 12px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+    .btn-edit { background: linear-gradient(135deg, #f59e0b, #d97706); padding: 7px 14px; font-size: 12px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); }
+    .btn-small { padding: 7px 14px; font-size: 12px; }
+    .btn-green { background: linear-gradient(135deg, #10b981, #059669); padding: 7px 14px; font-size: 12px; }
+
+    .item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid rgba(148, 163, 184, 0.1); }
+    .item:last-child { border-bottom: none; }
+    .item-title { font-weight: 700; color: #e2e8f0; margin-bottom: 3px; font-size: 15px; }
+    h3.item-title { margin: 0 0 3px 0; line-height: 1.2; } 
+
+    .item-meta { color: #94a3b8; font-size: 13px; }
+    .badge { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 3px 10px; border-radius: 8px; font-size: 11px; margin-right: 8px; font-weight: 700; }
+    .badge-ok { background: linear-gradient(135deg, #10b981, #059669); }
+    .badge-no { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    .badge-warn { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .badge-balance { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+    .empty { color: #64748b; text-align: center; padding: 30px; font-style: italic; }
+
+    .movie-row { display: flex; gap: 18px; align-items: flex-start; padding: 16px 0; border-bottom: 1px solid rgba(148, 163, 184, 0.1); }
+    .movie-row:last-child { border-bottom: none; }
+    .movie-poster { width: 85px; height: 125px; object-fit: cover; border-radius: 10px; background: rgba(15, 23, 42, 0.6); flex-shrink: 0; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4); border: 1px solid rgba(148, 163, 184, 0.1); }
+    .movie-poster.no-image { display: flex; align-items: center; justify-content: center; color: #475569; font-size: 32px; }
+    .movie-info { flex: 1; }
+    .movie-description { color: #94a3b8; font-size: 13px; margin-top: 6px; line-height: 1.5; }
+    .movie-actions { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+
+    .status { position: fixed; top: 24px; right: 24px; padding: 14px 26px; border-radius: 12px; color: white; font-weight: 700; opacity: 0; transition: opacity 0.3s, transform 0.3s; z-index: 2000; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4); transform: translateY(-20px); }
+    .status.show { opacity: 1; transform: translateY(0); }
+    .status.success { background: linear-gradient(135deg, #10b981, #059669); }
+    .status.error { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+    .modal-bg { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 1500; justify-content: center; align-items: center; padding: 20px; }
+    .modal-bg.show { display: flex; }
+    .modal { background: #1e293b; border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 20px; padding: 30px; max-width: 620px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6); }
+    .modal h2 { margin-bottom: 18px; background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 22px; }
+    .modal .total { font-size: 22px; font-weight: 800; margin: 18px 0; text-align: right; background: linear-gradient(135deg, #10b981, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .modal label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; margin-top: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.4); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.6); }
+
+    @media (max-width: 900px) {
+        .layout { grid-template-columns: 1fr; }
+        .sidebar { position: static; height: auto; flex-direction: row; overflow-x: auto; padding: 12px; gap: 8px; align-items: center; }
+        .logo { padding: 8px 12px; border-bottom: none; }
+        .logo-text { font-size: 22px; }
+        .nav { flex-direction: row; flex: initial; }
+        .nav-title { display: none; }
+        .nav-text { display: none; }
+        .nav-item { padding: 10px; }
+        .nav-icon { font-size: 22px; }
+        .cart-widget { min-width: 60px; padding: 10px; }
+        .cart-title, .cart-count { display: none; }
+        .content { padding: 20px; }
+        .header-wrapper { flex-direction: column; gap: 15px; }
+    }
+
+    #auth-screen {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: #0f172a;
+        background-image:
+            radial-gradient(circle at 80% 10%, rgba(99, 102, 241, 0.2), transparent 40%),
+            radial-gradient(circle at 20% 90%, rgba(236, 72, 153, 0.15), transparent 40%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 3000;
+    }
+    .auth-box {
+        background: rgba(30, 41, 59, 0.7);
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        border-radius: 20px;
+        padding: 40px;
+        width: 100%;
+        max-width: 420px;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+    }
+    .auth-logo {
+        text-align: center;
+        font-size: 42px;
+        font-weight: 900;
+        margin-bottom: 30px;
+        background: linear-gradient(90deg, #ef4444, #f97316, #fbbf24, #84cc16, #10b981, #06b6d4, #3b82f6, #8b5cf6, #a855f7, #ec4899, #ef4444);
+        background-size: 400% 100%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: rainbowShift 6s linear infinite;
+    }
+    .auth-title { font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 25px; color: #e2e8f0; }
+    .auth-form-group { margin-bottom: 16px; }
+    .auth-form-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .auth-switch { text-align: center; margin-top: 20px; font-size: 14px; color: #94a3b8; }
+    .auth-switch a { color: #818cf8; cursor: pointer; font-weight: 700; transition: color 0.2s; }
+    .auth-switch a:hover { color: #a5b4fc; text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div id="auth-screen">
+    <div class="auth-box">
+        <div class="auth-logo">CineHub</div>
+
+        <div id="login-box">
+            <h2 class="auth-title">Вход в систему</h2>
+            <form id="login-form">
+                <div class="auth-form-group">
+                    <label>Email</label>
+                    <input type="email" id="login-email" placeholder="admin@cinehub.ru" required>
+                </div>
+                <div class="auth-form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="login-password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn" style="width: 100%; padding: 14px; margin-top: 10px;">Войти</button>
+            </form>
+            <div class="auth-switch">
+                Нет аккаунта? <a onclick="toggleAuth('register')">Зарегистрироваться</a>
+            </div>
+        </div>
+
+        <div id="register-box" class="hidden">
+            <h2 class="auth-title">Регистрация</h2>
+            <form id="register-form">
+                <div class="auth-form-group">
+                    <label>Имя и Фамилия</label>
+                    <input type="text" id="reg-name" placeholder="Иван Иванов" required>
+                </div>
+                <div class="auth-form-group">
+                    <label>Email</label>
+                    <input type="email" id="reg-email" placeholder="user@example.com" required>
+                </div>
+                <div class="auth-form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="reg-password" placeholder="Минимум 6 символов" required>
+                </div>
+                <button type="submit" class="btn btn-refresh" style="width: 100%; padding: 14px; margin-top: 10px;">Создать аккаунт</button>
+            </form>
+            <div class="auth-switch">
+                Уже есть аккаунт? <a onclick="toggleAuth('login')">Войти</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="layout" id="main-layout" style="display: none;">
+    <aside class="sidebar">
+        <div class="logo">
+            <span class="logo-text">CineHub</span>
+        </div>
+
+        <nav class="nav">
+            <div class="nav-title">Меню</div>
+
+            <button class="nav-item active" onclick="showTab('movies', this)">
+                <span class="nav-icon">🎬</span>
+                <span class="nav-text">Фильмы</span>
+            </button>
+            <button class="nav-item" onclick="showTab('genres', this)">
+                <span class="nav-icon">🎭</span>
+                <span class="nav-text">Жанры</span>
+            </button>
+            <button class="nav-item" onclick="showTab('customers', this)">
+                <span class="nav-icon">👤</span>
+                <span class="nav-text">Клиенты</span>
+            </button>
+            <button class="nav-item" onclick="showTab('rentals', this)">
+                <span class="nav-icon">📺</span>
+                <span class="nav-text">Аренда</span>
+            </button>
+            <button class="nav-item" onclick="showTab('top', this)">
+                <span class="nav-icon">🏆</span>
+                <span class="nav-text">Топ</span>
+            </button>
+            <button class="nav-item" onclick="showTab('overdue', this)">
+                <span class="nav-icon">⏱</span>
+                <span class="nav-text">Просрочки</span>
+            </button>
+        </nav>
+
+        <div class="cart-widget" onclick="openCart()">
+            <div class="cart-header">
+                <span class="cart-title">🛒 Корзина</span>
+                <span class="cart-badge" id="cart-count">0</span>
+            </div>
+            <div class="cart-count" id="cart-total-side">0 ₽</div>
+        </div>
+    </aside>
+
+    <main class="content">
+        <div class="header-wrapper">
+            <div class="page-header">
+                <h1 id="page-title">🎬 Фильмы</h1>
+                <p id="page-subtitle">Каталог фильмов видеотеки</p>
+            </div>
+            <div class="user-profile">
+                <div class="user-info">
+                    <strong id="current-user">Администратор</strong>
+                    <span>Онлайн</span>
+                </div>
+                <button class="btn-logout" onclick="logout()">Выйти</button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat stat-movies">
+                <div class="stat-icon">🎬</div>
+                <div class="stat-value" id="s-movies">—</div>
+                <div class="stat-label">Фильмов</div>
+            </div>
+            <div class="stat stat-genres">
+                <div class="stat-icon">🎭</div>
+                <div class="stat-value" id="s-genres">—</div>
+                <div class="stat-label">Жанров</div>
+            </div>
+            <div class="stat stat-customers">
+                <div class="stat-icon">👤</div>
+                <div class="stat-value" id="s-customers">—</div>
+                <div class="stat-label">Клиентов</div>
+            </div>
+            <div class="stat stat-active">
+                <div class="stat-icon">📺</div>
+                <div class="stat-value" id="s-active">—</div>
+                <div class="stat-label">В аренде</div>
+            </div>
+            <div class="stat stat-balance">
+                <div class="stat-icon">💰</div>
+                <div class="stat-value" id="s-balance">—</div>
+                <div class="stat-label">Баланс, ₽</div>
+            </div>
+        </div>
+
+        <div id="tab-movies" class="tab-content">
+            <div class="card">
+                <h2>➕ Добавить фильм</h2>
+                <input id="m-title" placeholder="Название фильма">
+                <div class="row row-3">
+                    <input id="m-year" type="number" placeholder="Год">
+                    <input id="m-duration" type="number" placeholder="Длительность, мин">
+                    <input id="m-price" type="number" step="0.01" placeholder="Цена аренды, ₽">
+                </div>
+                <input id="m-poster" placeholder="🔗 URL постера (например: /posters/matrix.jpg)">
+                <textarea id="m-description" placeholder="Краткое описание фильма"></textarea>
+                <select id="m-genre"><option value="">Жанр</option></select>
+                <button class="btn" onclick="addMovie()">Добавить фильм</button>
+            </div>
+
+            <div class="card">
+                <h2>🎞️ Каталог фильмов</h2>
+                <div class="row row-4">
+                    <input id="f-search" placeholder="🔍 Поиск..." oninput="loadMovies()">
+                    <select id="f-genre" onchange="loadMovies()"><option value="">Все жанры</option></select>
+                    <input id="f-price-min" type="number" placeholder="Цена от" oninput="loadMovies()">
+                    <input id="f-price-max" type="number" placeholder="Цена до" oninput="loadMovies()">
+                </div>
+                <div class="row row-3">
+                    <select id="f-sort" onchange="loadMovies()">
+                        <option value="title">Сортировка: по названию</option>
+                        <option value="year">По году</option>
+                        <option value="price">По цене ↑</option>
+                        <option value="price_desc">По цене ↓</option>
+                    </select>
+                    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#94a3b8;">
+                        <input type="checkbox" id="f-available" onchange="loadMovies()"
+                               style="width:auto; margin: 0;"> Только доступные
+                    </label>
+                    <button class="btn btn-refresh" onclick="loadMovies()">🔄 Обновить</button>
+                </div>
+                <div id="movies-list"><div class="empty">Загрузка...</div></div>
+            </div>
+        </div>
+
+        <div id="tab-genres" class="tab-content hidden">
+            <div class="card">
+                <h2>➕ Добавить жанр</h2>
+                <input id="g-name" placeholder="Название жанра">
+                <button class="btn" onclick="addGenre()">Добавить</button>
+            </div>
+            <div class="card">
+                <h2>🎭 Список жанров</h2>
+                <button class="btn btn-refresh" onclick="loadGenres()">🔄 Обновить</button>
+                <div id="genres-list"></div>
+            </div>
+        </div>
+
+        <div id="tab-customers" class="tab-content hidden">
+            <div class="card">
+                <h2>➕ Добавить клиента</h2>
+                <div class="row row-2">
+                    <input id="c-firstname" placeholder="Имя">
+                    <input id="c-lastname" placeholder="Фамилия">
+                </div>
+                <div class="row row-2">
+                    <input id="c-email" type="email" placeholder="Email">
+                    <input id="c-phone" placeholder="Телефон">
+                </div>
+                <button class="btn" onclick="addCustomer()">Добавить</button>
+            </div>
+            <div class="card">
+                <h2>👤 Список клиентов</h2>
+                <button class="btn btn-refresh" onclick="loadCustomers()">🔄 Обновить</button>
+                <div id="customers-list"></div>
+            </div>
+        </div>
+
+        <div id="tab-rentals" class="tab-content hidden">
+            <div class="card">
+                <h2>📺 История аренд</h2>
+                <button class="btn btn-refresh" onclick="loadRentals()">🔄 Обновить</button>
+                <div id="rentals-list"></div>
+            </div>
+        </div>
+
+        <div id="tab-top" class="tab-content hidden">
+            <div class="card">
+                <h2>🏆 Самые популярные фильмы</h2>
+                <button class="btn btn-refresh" onclick="loadTop()">🔄 Обновить</button>
+                <div id="top-list"></div>
+            </div>
+        </div>
+
+        <div id="tab-overdue" class="tab-content hidden">
+            <div class="card">
+                <h2>⏱ Просроченные аренды</h2>
+                <button class="btn btn-refresh" onclick="loadOverdue()">🔄 Обновить</button>
+                <div id="overdue-list"></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div class="modal-bg" id="cart-modal">
+    <div class="modal">
+        <h2>🛒 Корзина</h2>
+        <div id="cart-items"><div class="empty">Загрузка...</div></div>
+        <div class="total" id="cart-total">Итого: 0 ₽</div>
+
+        <label>Клиент:</label>
+        <select id="cart-customer"><option value="">Выберите клиента</option></select>
+
+        <label>Способ оплаты:</label>
+        <select id="cart-payment">
+            <option value="0">💳 С баланса</option>
+            <option value="1">💳 Банковская карта</option>
+            <option value="2">💵 Наличные</option>
+        </select>
+
+        <div class="row row-2" style="margin-top: 18px;">
+            <button class="btn btn-green" onclick="checkout()" style="padding: 12px;">✅ Оформить аренду</button>
+            <button class="btn btn-delete" onclick="closeCart()" style="padding: 12px;">❌ Закрыть</button>
+        </div>
+    </div>
+</div>
+
+<div class="status" id="status"></div>
+
+<script>
+const API = "/api";
+let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+
+const pageTitles = {
+    movies:    { title: "🎬 Фильмы",    subtitle: "Каталог фильмов видеотеки" },
+    genres:    { title: "🎭 Жанры",     subtitle: "Управление жанрами" },
+    customers: { title: "👤 Клиенты",   subtitle: "База клиентов видеотеки" },
+    rentals:   { title: "📺 Аренда",    subtitle: "История аренд и возвратов" },
+    top:       { title: "🏆 Топ",       subtitle: "Самые популярные фильмы" },
+    overdue:   { title: "⏱ Просрочки",  subtitle: "Аренды с истёкшим сроком" }
+};
+
+function showTab(name, btn) {
+    document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+    document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+    document.getElementById("tab-" + name).classList.remove("hidden");
+    btn.classList.add("active");
+
+    const info = pageTitles[name];
+    if (info) {
+        document.getElementById("page-title").textContent = info.title;
+        document.getElementById("page-subtitle").textContent = info.subtitle;
+    }
+
+    if (name === "top") loadTop();
+    if (name === "overdue") loadOverdue();
+    if (name === "rentals") loadRentals();
+    if (name === "customers") loadCustomers();
+    if (name === "genres") loadGenres();
+    if (name === "movies") loadMovies();
+}
+
+function showStatus(msg, isError) {
+    const el = document.getElementById("status");
+    el.textContent = msg;
+    el.className = "status show " + (isError ? "error" : "success");
+    setTimeout(() => el.classList.remove("show"), 2500);
+}
+
+async function api(url, options) {
+    const res = await fetch(API + url, options);
+    if (!res.ok) throw new Error(await res.text());
+    return res.status === 204 ? null : res.json();
+}
+
+function toggleAuth(type) {
+    const loginBox = document.getElementById('login-box');
+    const registerBox = document.getElementById('register-box');
+    if (type === 'register') {
+        loginBox.classList.add('hidden');
+        registerBox.classList.remove('hidden');
+    } else {
+        registerBox.classList.add('hidden');
+        loginBox.classList.remove('hidden');
+    }
+}
+
+document.getElementById('login-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value;
+    localStorage.setItem('userEmail', email);
+    enterApp(email.split('@')[0]);
+});
+
+document.getElementById('register-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    alert('Аккаунт успешно создан! Теперь войдите.');
+    toggleAuth('login');
+});
+
+function enterApp(userName = "Администратор") {
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('main-layout').style.display = 'grid';
+    document.getElementById('current-user').textContent = userName;
+    
+    updateCartBadge();
+    loadStats();
+    loadMovies();
+    loadGenres();
+}
+
+function logout() {
+    localStorage.removeItem('userEmail');
+    document.getElementById('main-layout').style.display = 'none';
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('login-form').reset();
+    document.getElementById('register-form').reset();
+    toggleAuth('login');
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    const savedUser = localStorage.getItem('userEmail');
+    if (savedUser) {
+        enterApp(savedUser.split('@')[0]);
+    } else {
+        document.getElementById('auth-screen').style.display = 'flex';
+        document.getElementById('main-layout').style.display = 'none';
+    }
+});
+
+function saveCart() {
+    localStorage.setItem("cart", JSON.stringify(cart));
+    updateCartBadge();
+}
+
+function updateCartBadge() {
+    document.getElementById("cart-count").textContent = cart.length;
+    let total = cart.reduce((sum, m) => sum + m.price, 0);
+    document.getElementById("cart-total-side").textContent = total + " ₽";
+}
+
+function addToCart(movie) {
+    if (cart.find(m => m.movieId === movie.movieId)) return showStatus("Уже в корзине", true);
+    cart.push({ movieId: movie.movieId, title: movie.title, price: movie.price });
+    saveCart();
+    showStatus("Добавлено в корзину");
+    loadMovies();
+}
+
+function removeFromCart(movieId) {
+    cart = cart.filter(m => m.movieId !== movieId);
+    saveCart();
+    renderCart();
+    loadMovies();
+}
+
+function openCart() {
+    renderCart();
+    loadCartCustomers();
+    document.getElementById("cart-modal").classList.add("show");
+}
+
+function closeCart() {
+    document.getElementById("cart-modal").classList.remove("show");
+}
+
+function renderCart() {
+    const box = document.getElementById("cart-items");
+    if (cart.length === 0) {
+        box.innerHTML = '<div class="empty">Корзина пуста</div>';
+        document.getElementById("cart-total").textContent = "Итого: 0 ₽";
+        return;
+    }
+    let total = 0;
+    box.innerHTML = cart.map(m => {
+        total += m.price;
+        return `<div class="item">
+            <div><h3 class="item-title">${m.title}</h3><div class="item-meta">${m.price} ₽</div></div>
+            <button class="btn btn-delete" onclick="removeFromCart(${m.movieId})">Убрать</button>
+        </div>`;
+    }).join("");
+    document.getElementById("cart-total").textContent = `Итого: ${total} ₽`;
+}
+
+async function loadCartCustomers() {
+    try {
+        const customers = await api("/customers");
+        const sel = document.getElementById("cart-customer");
+        sel.innerHTML = '<option value="">Выберите клиента</option>';
+        customers.forEach(c => sel.innerHTML += `<option value="${c.customerId}">${c.fullName} (${(c.balance || 0).toFixed(0)} ₽)</option>`);
+    } catch {}
+}
+
+async function checkout() {
+    const customerId = parseInt(document.getElementById("cart-customer").value);
+    const paymentMethod = parseInt(document.getElementById("cart-payment").value);
+    if (!customerId) return showStatus("Выберите клиента", true);
+    if (cart.length === 0) return showStatus("Корзина пуста", true);
+    try {
+        const result = await api("/cart/checkout", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ customerId, movieIds: cart.map(m => m.movieId), paymentMethod })
+        });
+        showStatus(`Аренда оформлена. Итого: ${result.total} ₽`);
+        cart = [];
+        saveCart();
+        closeCart();
+        loadRentals();
+        loadStats();
+    } catch (e) { showStatus(e.message || "Ошибка оформления", true); }
+}
+
+async function loadStats() {
+    try {
+        const s = await api("/stats");
+        document.getElementById("s-movies").textContent = s.movies ?? '—';
+        document.getElementById("s-genres").textContent = s.genres ?? '—';
+        document.getElementById("s-customers").textContent = s.customers ?? '—';
+        document.getElementById("s-active").textContent = s.rentalsActive ?? '—';
+        document.getElementById("s-balance").textContent = (s.totalBalance ?? 0).toFixed(0);
+    } catch {}
+}
+
+async function loadMovies() {
+    const params = new URLSearchParams();
+    const search = document.getElementById("f-search").value;
+    const genreId = document.getElementById("f-genre").value;
+    const pMin = document.getElementById("f-price-min").value;
+    const pMax = document.getElementById("f-price-max").value;
+    const sort = document.getElementById("f-sort").value;
+    const avail = document.getElementById("f-available").checked;
+    if (search) params.append("search", search);
+    if (genreId) params.append("genreId", genreId);
+    if (pMin) params.append("priceMin", pMin);
+    if (pMax) params.append("priceMax", pMax);
+    if (sort) params.append("sortBy", sort);
+    if (avail) params.append("availableOnly", "true");
+
+    try {
+        const movies = await api("/movies?" + params);
+        document.getElementById("movies-list").innerHTML = movies.length === 0
+            ? '<div class="empty">Нет фильмов</div>'
+            : movies.map(m => {
+                const poster = m.posterUrl
+                    ? `<img src="${m.posterUrl}" class="movie-poster" alt="${m.title}"
+                            onerror="this.outerHTML='<div class=\\'movie-poster no-image\\'>🎬</div>'">`
+                    : `<div class="movie-poster no-image">🎬</div>`;
+                const inCart = cart.find(c => c.movieId === m.movieId);
+                return `<div class="movie-row">
+                    ${poster}
+                    <div class="movie-info">
+                        <h3 class="item-title">${m.title}
+                            <span class="badge">${m.year}</span>
+                            <span class="badge ${m.isAvailable ? 'badge-ok' : 'badge-no'}">
+                                ${m.isAvailable ? 'доступен' : 'выдан'}
+                            </span>
+                        </h3>
+                        <div class="item-meta">${m.genreName || '—'} • ${m.durationMinutes} мин • ${m.price} ₽</div>
+                        ${m.description ? `<div class="movie-description">${m.description}</div>` : ''}
+                    </div>
+                    <div class="movie-actions">
+                        ${m.isAvailable ? `<button class="btn ${inCart ? 'btn-delete' : 'btn-green'}"
+                            onclick='${inCart ? `removeFromCart(${m.movieId})` : `addToCart(${JSON.stringify(m).replace(/'/g, "&#39;")})`}'>
+                            ${inCart ? '✓ В корзине' : '+ В корзину'}</button>` : ''}
+                        <button class="btn btn-edit" onclick='editMovie(${JSON.stringify(m).replace(/'/g, "&#39;")})'>Изменить</button>
+                        <button class="btn btn-delete" onclick="deleteMovie(${m.movieId})">Удалить</button>
+                    </div>
+                </div>`;
+            }).join("");
+    } catch { document.getElementById("movies-list").innerHTML = '<div class="empty">Ошибка загрузки</div>'; }
+}
+
+async function addMovie() {
+    const movie = {
+        title: document.getElementById("m-title").value.trim(),
+        year: parseInt(document.getElementById("m-year").value),
+        durationMinutes: parseInt(document.getElementById("m-duration").value) || 90,
+        price: parseFloat(document.getElementById("m-price").value) || 100,
+        posterUrl: document.getElementById("m-poster").value.trim() || null,
+        description: document.getElementById("m-description").value.trim() || null,
+        genreId: parseInt(document.getElementById("m-genre").value) || 1
+    };
+    if (!movie.title || !movie.year) return showStatus("Заполните название и год", true);
+    await api("/movies", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(movie) });
+    ["m-title","m-year","m-duration","m-price","m-poster","m-description"].forEach(id => document.getElementById(id).value = "");
+    showStatus("Фильм добавлен");
+    loadMovies();
+    loadStats();
+}
+
+async function editMovie(movie) {
+    const t = prompt("Название:", movie.title); if (t === null) return;
+    const y = prompt("Год:", movie.year); if (y === null) return;
+    const p = prompt("Цена:", movie.price); if (p === null) return;
+    const d = prompt("Длительность:", movie.durationMinutes); if (d === null) return;
+    const po = prompt("URL постера:", movie.posterUrl || ""); if (po === null) return;
+    const de = prompt("Описание:", movie.description || ""); if (de === null) return;
+    await api("/movies/" + movie.movieId, { method: "PUT", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ movieId: movie.movieId, title: t, year: parseInt(y), price: parseFloat(p),
+            durationMinutes: parseInt(d), posterUrl: po.trim() || null, description: de.trim() || null, genreId: movie.genreId })});
+    showStatus("Фильм обновлён");
+    loadMovies();
+}
+
+async function deleteMovie(id) {
+    if (!confirm("Удалить фильм?")) return;
+    await api("/movies/" + id, { method: "DELETE" });
+    showStatus("Фильм удалён");
+    loadMovies();
+    loadStats();
+}
+
+async function loadGenres() {
+    try {
+        const genres = await api("/genres");
+        document.getElementById("genres-list").innerHTML = genres.length === 0
+            ? '<div class="empty">Нет жанров</div>'
+            : genres.map(g => `<div class="item">
+                <h3 class="item-title">${g.name}</h3>
+                <button class="btn btn-delete" onclick="deleteGenre(${g.genreId})">Удалить</button>
+            </div>`).join("");
+        const sel1 = document.getElementById("m-genre");
+        const sel2 = document.getElementById("f-genre");
+        sel1.innerHTML = '<option value="">Жанр</option>';
+        sel2.innerHTML = '<option value="">Все жанры</option>';
+        genres.forEach(g => {
+            sel1.innerHTML += `<option value="${g.genreId}">${g.name}</option>`;
+            sel2.innerHTML += `<option value="${g.genreId}">${g.name}</option>`;
+        });
+    } catch {}
+}
+
+async function addGenre() {
+    const name = document.getElementById("g-name").value.trim();
+    if (!name) return showStatus("Введите название", true);
+    await api("/genres", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ name }) });
+    document.getElementById("g-name").value = "";
+    showStatus("Жанр добавлен");
+    loadGenres();
+    loadStats();
+}
+
+async function deleteGenre(id) {
+    if (!confirm("Удалить жанр?")) return;
+    await api("/genres/" + id, { method: "DELETE" });
+    showStatus("Жанр удалён");
+    loadGenres();
+    loadStats();
+}
+
+async function loadCustomers() {
+    try {
+        const customers = await api("/customers");
+        document.getElementById("customers-list").innerHTML = customers.length === 0
+            ? '<div class="empty">Нет клиентов</div>'
+            : customers.map(c => `<div class="item">
+                <div>
+                    <h3 class="item-title">${c.fullName} <span class="badge badge-balance">${(c.balance || 0).toFixed(0)} ₽</span></h3>
+                    <div class="item-meta">${c.email || '—'} • ${c.phone || '—'}</div>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn btn-green btn-small" onclick="topUpCustomer(${c.customerId}, '${c.fullName}')">💰 Пополнить</button>
+                    <button class="btn btn-edit btn-small" onclick="viewHistory(${c.customerId}, '${c.fullName.replace(/'/g, "\\'")}')">История</button>
+                    <button class="btn btn-delete btn-small" onclick="deleteCustomer(${c.customerId})">Удалить</button>
+                </div>
+            </div>`).join("");
+    } catch {}
+}
+
+async function addCustomer() {
+    const customer = {
+        firstName: document.getElementById("c-firstname").value.trim(),
+        lastName: document.getElementById("c-lastname").value.trim(),
+        email: document.getElementById("c-email").value.trim() || null,
+        phone: document.getElementById("c-phone").value.trim() || null
+    };
+    if (!customer.firstName || !customer.lastName) return showStatus("Введите имя и фамилию", true);
+    await api("/customers", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(customer) });
+    ["c-firstname","c-lastname","c-email","c-phone"].forEach(id => document.getElementById(id).value = "");
+    showStatus("Клиент добавлен");
+    loadCustomers();
+    loadStats();
+}
+
+async function deleteCustomer(id) {
+    if (!confirm("Удалить клиента?")) return;
+    await api("/customers/" + id, { method: "DELETE" });
+    showStatus("Клиент удалён");
+    loadCustomers();
+    loadStats();
+}
+
+async function topUpCustomer(id, name) {
+    const amount = parseFloat(prompt(`Сумма пополнения для "${name}":`, "1000"));
+    if (!amount || amount <= 0) return;
+    const method = parseInt(prompt("Способ: 0 - Баланс, 1 - Карта, 2 - Наличные", "1")) || 1;
+    try {
+        const result = await api(`/customers/${id}/topup`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ amount, method }) });
+        showStatus(`Баланс: ${result.balance} ₽`);
+        loadCustomers();
+        loadStats();
+    } catch { showStatus("Ошибка пополнения", true); }
+}
+
+async function viewHistory(id, name) {
+    try {
+        const history = await api(`/customers/${id}/transactions`);
+        if (history.length === 0) { alert(`У клиента "${name}" нет операций`); return; }
+        alert(`История "${name}":\n\n` + history.map(h => `${h.amount > 0 ? '+' : ''}${h.amount} ₽ — ${h.description || ''}`).join("\n"));
+    } catch { showStatus("Ошибка", true); }
+}
+
+async function loadRentals() {
+    try {
+        const rentals = await api("/rentals");
+        document.getElementById("rentals-list").innerHTML = rentals.length === 0
+            ? '<div class="empty">Нет аренды</div>'
+            : rentals.map(r => `<div class="item">
+                <div>
+                    <h3 class="item-title">${r.movieTitle} → ${r.customerName}</h3>
+                    <div class="item-meta">${new Date(r.rentedAt).toLocaleDateString()}
+                        ${r.isActive ? '<span class="badge badge-no">в аренде</span>' : '<span class="badge badge-ok">возвращено</span>'}
+                    </div>
+                </div>
+                ${r.isActive ? `<button class="btn btn-small" onclick="returnMovie(${r.rentalId})">Вернуть</button>` : ''}
+            </div>`).join("");
+    } catch {}
+}
+
+async function returnMovie(id) {
+    await api(`/rentals/${id}/return`, { method: "POST" });
+    showStatus("Фильм возвращён");
+    loadRentals();
+    loadStats();
+    loadMovies();
+}
+
+async function loadTop() {
+    try {
+        const top = await api("/movies/top?count=5");
+        if (top.length === 0) { document.getElementById("top-list").innerHTML = '<div class="empty">Нет данных</div>'; return; }
+        const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+        document.getElementById("top-list").innerHTML = top.map((m, i) => {
+            const poster = m.posterUrl
+                ? `<img src="${m.posterUrl}" class="movie-poster" alt="${m.title}"
+                        onerror="this.outerHTML='<div class=\\'movie-poster no-image\\'>🎬</div>'">`
+                : `<div class="movie-poster no-image">🎬</div>`;
+            return `<div class="movie-row">${poster}
+                <div class="movie-info">
+                    <h3 class="item-title">${medals[i] || ''} ${m.title}</h3>
+                    <div class="item-meta">${m.genreName || '—'} • ${m.year} • ${m.rentalsCount} аренд</div>
+                </div></div>`;
+        }).join("");
+    } catch {}
+}
+
+async function loadOverdue() {
+    try {
+        const overdue = await api("/rentals/overdue");
+        document.getElementById("overdue-list").innerHTML = overdue.length === 0
+            ? '<div class="empty">Просроченных аренд нет ✅</div>'
+            : overdue.map(r => `<div class="item">
+                <div>
+                    <h3 class="item-title">${r.movieTitle} → ${r.customerName}</h3>
+                    <div class="item-meta">Взято: ${new Date(r.rentedAt).toLocaleDateString()}
+                        <span class="badge badge-warn">просрочка ${r.daysOverdue} дн.</span>
+                    </div>
+                </div>
+            </div>`).join("");
+    } catch {}
+}
+</script>
+</body>
+</html>
