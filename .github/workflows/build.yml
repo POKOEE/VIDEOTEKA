@@ -1,0 +1,55 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore VideoLibraryApi/VideoLibraryApi.csproj
+
+      - name: Build project
+        run: dotnet build VideoLibraryApi/VideoLibraryApi.csproj --no-restore -c Release
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Приводим имя образа к нижнему регистру
+      - name: Lowercase repository name
+        id: repo
+        run: echo "name=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/videoteka:latest
+            ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/videoteka:${{ github.sha }}
