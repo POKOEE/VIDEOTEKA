@@ -193,3 +193,7 @@ C:\Users\Acer\Desktop\VIDEOTEKA\VideoLibraryApi\bin\Debug\net10.0\ru\Microsoft.C
 C:\Users\Acer\Desktop\VIDEOTEKA\VideoLibraryApi\bin\Debug\net10.0\tr\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
 C:\Users\Acer\Desktop\VIDEOTEKA\VideoLibraryApi\bin\Debug\net10.0\zh-Hans\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
 C:\Users\Acer\Desktop\VIDEOTEKA\VideoLibraryApi\bin\Debug\net10.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Acer\Desktop\VIDEOTEKA\VideoLibraryApi\obj\Debug\net10.0\VideoLibraryApi.sourcelink.json
+C:\Users\Acer\Desktop\VIDEOTEKA\VideoLibraryApi\bin\Debug\net10.0\Swashbuckle.AspNetCore.ReDoc.dll
+C:\Users\Acer\Desktop\VIDEOTEKA\VideoLibraryApi\bin\Debug\net10.0\VideoLibraryApi.staticwebassets.runtime.json
+C:\Users\Acer\Desktop\VIDEOTEKA\VideoLibraryApi\obj\Debug\net10.0\compressed\mde23jut9x-{0}-1mx46p4pec-1mx46p4pec.gz

@@ -9,6 +9,9 @@ public class Movie
     public int DurationMinutes { get; set; }
     public decimal Price { get; set; }        
 
+ public string? PosterUrl { get; set; }       
+    public string? Description { get; set; }     
+
     public int GenreId { get; set; }
     public Genre? Genre { get; set; }
 
