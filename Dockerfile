@@ -1,20 +1,18 @@
-# Этап 1: сборка
+# Р В­Р СћР С’Р Сџ 1: Р РЋР В±Р С•РЎР‚Р С”Р В° (Build)
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
-
-# Копируем csproj и восстанавливаем зависимости
-COPY VideoLibraryApi/VideoLibraryApi.csproj ./VideoLibraryApi/
-RUN dotnet restore VideoLibraryApi/VideoLibraryApi.csproj
-
-# Копируем всё остальное и публикуем
+# Р С™Р С•Р С—Р С‘РЎР‚РЎС“Р ВµР С РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎвЂћР В°Р в„–Р В» Р С—РЎР‚Р С•Р ВµР С”РЎвЂљР В°, РЎвЂЎРЎвЂљР С•Р В±РЎвЂ№ Р Р†Р С•РЎРѓРЎРѓРЎвЂљР В°Р Р…Р С•Р Р†Р С‘РЎвЂљРЎРЉ Р В·Р В°Р Р†Р С‘РЎРѓР С‘Р СР С•РЎРѓРЎвЂљР С‘
+COPY ["VideoLibraryApi.csproj", "./"]
+RUN dotnet restore "VideoLibraryApi.csproj"
+# Р С™Р С•Р С—Р С‘РЎР‚РЎС“Р ВµР С Р С•РЎРѓРЎвЂљР В°Р В»РЎРЉР Р…Р С•Р в„– Р С”Р С•Р Т‘
 COPY . .
-WORKDIR /src/VideoLibraryApi
-RUN dotnet publish VideoLibraryApi.csproj -c Release -o /app/publish
+# Р РЋР С•Р В±Р С‘РЎР‚Р В°Р ВµР С Р С—РЎР‚Р С•Р ВµР С”РЎвЂљ Р Р† Р С—Р В°Р С—Р С”РЎС“ /app/publish
+RUN dotnet publish "VideoLibraryApi.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# Этап 2: финальный образ (только рантайм)
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+# Р В­Р СћР С’Р Сџ 2: Р ВРЎвЂљР С•Р С–Р С•Р Р†РЎвЂ№Р в„– Р С•Р В±РЎР‚Р В°Р В· (Runtime)
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
+# Р С™Р С•Р С—Р С‘РЎР‚РЎС“Р ВµР С РЎвЂљР С•Р В»РЎРЉР С”Р С• Р С–Р С•РЎвЂљР С•Р Р†РЎвЂ№Р Вµ РЎРѓР С”Р С•Р СР С—Р С‘Р В»Р С‘РЎР‚Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ РЎвЂћР В°Р в„–Р В»РЎвЂ№ Р С‘Р В· Р С—Р ВµРЎР‚Р Р†Р С•Р С–Р С• РЎРЊРЎвЂљР В°Р С—Р В°
 COPY --from=build /app/publish .
-ENV ASPNETCORE_URLS=http://+:5000
-EXPOSE 5000
+# Р вЂ”Р В°Р С—РЎС“РЎРѓР С”Р В°Р ВµР С Р С—РЎР‚Р С‘Р В»Р С•Р В¶Р ВµР Р…Р С‘Р Вµ
 ENTRYPOINT ["dotnet", "VideoLibraryApi.dll"]

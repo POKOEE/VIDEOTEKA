@@ -4,7 +4,7 @@ using VideoLibraryApi.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
+// 1. Подключение к базе данных
 builder.Services.AddDbContext<VideoLibraryContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -12,13 +12,23 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// 2. Настройка портов для работы в Docker (Nginx будет обращаться к 8080)
+builder.WebHost.UseUrls("http://0.0.0.0:8080");
 
 var app = builder.Build();
 
+// 3. АВТОМАТИЧЕСКОЕ ПРИМЕНЕНИЕ МИГРАЦИЙ ПРИ СТАРТЕ
+// Это критически важно, так как мы исключили файл .db из Docker-образа.
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<VideoLibraryContext>();
+    // Создаст базу данных, если её нет, и применит все миграции
+    db.Database.Migrate(); 
+}
 
+// 4. Swagger (Документация)
 app.UseSwagger();
 app.UseSwaggerUI();
-
 app.UseReDoc(c =>
 {
     c.RoutePrefix = "redoc";
@@ -26,11 +36,11 @@ app.UseReDoc(c =>
     c.DocumentTitle = "VideoLibraryApi";
 });
 
-
+// 5. Статические файлы и sitemap
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-
+// 6. SEO Заголовки для API
 app.Use(async (context, next) =>
 {
     if (context.Request.Path.StartsWithSegments("/api"))
@@ -43,13 +53,10 @@ app.Use(async (context, next) =>
 app.UseAuthorization();
 app.MapControllers();
 
-
 app.MapGet("/sitemap.xml", async (HttpContext context) =>
 {
-    // Получаем путь, который видит сервер
     var filePath = Path.Combine(app.Environment.WebRootPath, "sitemap.xml");
     
-    // Выводим этот путь в терминал VS Code
     Console.WriteLine($"=== ПОПЫТКА ОТКРЫТЬ SITEMAP ===");
     Console.WriteLine($"Ищу файл по пути: {filePath}");
     Console.WriteLine($"Файл существует: {System.IO.File.Exists(filePath)}");
@@ -61,7 +68,6 @@ app.MapGet("/sitemap.xml", async (HttpContext context) =>
     }
     else
     {
-        // Если файла нет, выводим в терминал, какие файлы реально есть в папке
         var dirPath = app.Environment.WebRootPath;
         if (Directory.Exists(dirPath))
         {

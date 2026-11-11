@@ -12,7 +12,10 @@ obj/
 appsettings.Development.json
 .env
 
-# SQLite — на время разработки
-# *.db
-# *.db-shm
-# *.db-wal
+# База данных (локальная разработка)
+videolibrary.db
+videolibrary.db-shm
+videolibrary.db-wal
+
+# Сертификаты (ОБЯЗАТЕЛЬНО)
+certs/

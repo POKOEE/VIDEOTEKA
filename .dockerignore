@@ -4,10 +4,16 @@
 **/.vscode/
 .git/
 .gitignore
+.github/
 *.md
 README.md
+# Локальная база (в Docker она создастся заново в томе)
 *.db
+videolibrary.db
+videolibrary.db-shm
+videolibrary.db-wal
 appsettings.Development.json
-.github/
+# Сам Docker не нужен внутри образа
 Dockerfile
 .dockerignore
+docker-compose.yml
